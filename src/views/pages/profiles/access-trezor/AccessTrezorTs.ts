@@ -266,11 +266,11 @@ export default class AccessLedgerTs extends Vue {
     public getCurrentStep(): number {
         switch (this.$route.name) {
             default:
-            case 'profiles.accessLedger.info':
+            case 'profiles.accessTrezor.info':
                 return 0;
-            case 'profiles.accessLedger.walletSelection':
+            case 'profiles.accessTrezor.walletSelection':
                 return 1;
-            case 'profiles.accessLedger.finalize':
+            case 'profiles.accessTrezor.finalize':
                 return 2;
         }
     }

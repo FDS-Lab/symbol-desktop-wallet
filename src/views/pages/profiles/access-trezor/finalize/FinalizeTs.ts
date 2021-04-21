@@ -204,13 +204,13 @@ export default class FinalizeTs extends Vue {
             return this.derivation.incrementPathLevel(accountPath, DerivationPathLevels.Profile, index);
         });
 
-        const accounts = await this.accountService.generateLedgerAccountsPaths(this.currentProfile.networkType, paths);
+        const accounts = await this.accountService.generateTrezorAccountsPaths(this.currentProfile.networkType, paths);
 
         return accounts.map((account, i) => {
             return {
                 id: SimpleObjectStorage.generateIdentifier(),
                 profileName: this.currentProfile.profileName,
-                name: `Ledger Account ${indexes[i] + 1}`,
+                name: `Trezor Account ${indexes[i] + 1}`,
                 node: '',
                 type: AccountType.LEDGER,
                 address: account.address['plain'](),
@@ -223,7 +223,7 @@ export default class FinalizeTs extends Vue {
     }
 
     /**
-     * Create opt-in account instances from Ledger device and paths
+     * Create opt-in account instances from Trezor device and paths
      * @return {AccountModel}
      */
     private async createOptInAccountsFromPathIndexes(indexes: number[]): Promise<AccountModel[]> {
@@ -236,13 +236,13 @@ export default class FinalizeTs extends Vue {
             return this.derivation.incrementPathLevel(accountPath, DerivationPathLevels.Profile, index);
         });
 
-        const accounts = await this.accountService.generateLedgerAccountsPaths(this.currentProfile.networkType, paths, Network.BITCOIN);
+        const accounts = await this.accountService.generateTrezorAccountsPaths(this.currentProfile.networkType, paths, Network.BITCOIN);
 
         return accounts.map((account, i) => {
             return {
                 id: SimpleObjectStorage.generateIdentifier(),
                 profileName: this.currentProfile.profileName,
-                name: `Opt In Ledger Account ${indexes[i] + 1}`,
+                name: `Opt In Trezor Account ${indexes[i] + 1}`,
                 node: '',
                 type: AccountType.LEDGER_OPT_IN,
                 address: account.address['plain'](),

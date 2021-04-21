@@ -267,8 +267,8 @@ function initialize() {
     const height = parseInt(width / (1920 / 1080))
 
     const windowOptions = {
-      minWidth: width,
-      minHeight: height,
+      // minWidth: width,
+      // minHeight: height,
       width: width,
       height: height,
       title: app.getName(),
@@ -311,12 +311,24 @@ function initialize() {
     app.quit()
   })
   app.on('web-contents-created', (e, webContents) => {
-    webContents.on('new-window', (event, url) => {
-      event.preventDefault();
-
-      if (url.match(/^(?:http(s)?:\/\/)?[\w.-]+(?:\.[\w\.-]+)+[\w\-\._~:/?#[\]@!\$&'\(\)\*\+,;=.]+$/g)) {
+    // console.log('mainWindow',mainWindow)
+      // console.log('webc-------',e)
+      // webContents.setZoomLevel(-50)
+      webContents.on('new-window', (event, url) => {
+      // event.sender.browserWindowOptions.width=500
+      // event.sender.browserWindowOptions.height=800
+      // console.log('events-------', event)
+      // Specific for Trezor popup run in localhost for dev process
+      if (url.includes('localhost')) {
+        // event.sender.browserWindowOptions.width=500
+        // event.sender.browserWindowOptions.height=500
+      } else {
+        event.preventDefault();
+        if (url.match(/^(?:http(s)?:\/\/)?[\w.-]+(?:\.[\w\.-]+)+[\w\-\._~:/?#[\]@!\$&'\(\)\*\+,;=.]+$/g)) {
           shell.openExternal(url)
+        }
       }
+      
     })
   })
 }

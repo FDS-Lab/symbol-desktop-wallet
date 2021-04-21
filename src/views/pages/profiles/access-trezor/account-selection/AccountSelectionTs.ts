@@ -226,7 +226,7 @@ export default class AccountSelectionTs extends Vue {
     private async initAccounts() {
         try {
             // - generate addresses
-            const addressesList = await this.accountService.getLedgerAccounts(this.currentProfile.networkType, 10);
+            const addressesList = await this.accountService.getTrezorAccounts(this.currentProfile.networkType, 10);
             this.$store.commit('account/addressesList', addressesList);
 
             // fetch accounts info
@@ -254,7 +254,7 @@ export default class AccountSelectionTs extends Vue {
     private async initOptInAccounts() {
         try {
             // - generate addresses
-            const possibleOptInAccounts: any[] = await this.accountService.getLedgerPublicKey(
+            const possibleOptInAccounts: any[] = await this.accountService.getTrezorPublicKeys(
                 this.currentProfile.networkType,
                 10,
                 Network.BITCOIN,
