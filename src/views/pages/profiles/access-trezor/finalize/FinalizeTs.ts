@@ -221,7 +221,7 @@ export default class FinalizeTs extends Vue {
                 profileName: this.currentProfile.profileName,
                 name: `Trezor Account ${indexes[i] + 1}`,
                 node: '',
-                type: AccountType.LEDGER,
+                type: AccountType.TREZOR,
                 address: account.address['plain'](),
                 publicKey: account.publicKey,
                 encryptedPrivateKey: '',
