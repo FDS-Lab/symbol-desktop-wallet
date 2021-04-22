@@ -229,7 +229,8 @@ function initialize() {
         webPreferences: {
           nodeIntegration: false,
           enableRemoteModule: false,
-          preload: path.resolve(__dirname, 'preload.js')
+          preload: path.resolve(__dirname, 'preload.js'),
+          nativeWindowOpen: true, // <-- important for Trezor popup
         }
       })
     } else {
@@ -242,7 +243,8 @@ function initialize() {
         webPreferences: {
           nodeIntegration: false,
           enableRemoteModule: false,
-          preload: path.resolve(__dirname, 'preload.js')
+          preload: path.resolve(__dirname, 'preload.js'),
+          nativeWindowOpen: true, // <-- important for Trezor popup
         }
       })
     }
@@ -276,7 +278,8 @@ function initialize() {
       webPreferences: {
         nodeIntegration: false,
         enableRemoteModule: false,
-        preload: path.resolve(__dirname, 'preload.js')
+        preload: path.resolve(__dirname, 'preload.js'),
+        nativeWindowOpen: true, // <-- important for Trezor popup
       },
       resizable: true,
     }
@@ -284,7 +287,7 @@ function initialize() {
     mainWindow = new BrowserWindow(windowOptions)
     mainWindow.setMenu(null)
     mainWindow.loadURL(loadUrlPath)
-    mainWindow.toggleDevTools()
+    // mainWindow.toggleDevTools()
 
     mainWindow.once('ready-to-show', () => {
       mainWindow.show()
@@ -311,24 +314,24 @@ function initialize() {
     app.quit()
   })
   app.on('web-contents-created', (e, webContents) => {
-    // console.log('mainWindow',mainWindow)
-      // console.log('webc-------',e)
-      // webContents.setZoomLevel(-50)
-      webContents.on('new-window', (event, url) => {
-      // event.sender.browserWindowOptions.width=500
-      // event.sender.browserWindowOptions.height=800
-      // console.log('events-------', event)
+    webContents.on('new-window', (event, url, frameName, disposition, options, _additionalFeatures) => {
       // Specific for Trezor popup run in localhost for dev process
       if (url.includes('localhost')) {
-        // event.sender.browserWindowOptions.width=500
-        // event.sender.browserWindowOptions.height=500
+        event.preventDefault();
+        const connectPopup = new BrowserWindow(options);
+        event.newGuest = connectPopup;
+        // <- Make center popup
+        connectPopup.hide();
+        connectPopup.center();
+        connectPopup.show();
+        // ->
       } else {
         event.preventDefault();
         if (url.match(/^(?:http(s)?:\/\/)?[\w.-]+(?:\.[\w\.-]+)+[\w\-\._~:/?#[\]@!\$&'\(\)\*\+,;=.]+$/g)) {
           shell.openExternal(url)
         }
       }
-      
+
     })
   })
 }

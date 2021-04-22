@@ -38,9 +38,7 @@ import _ from 'lodash';
             networkCurrency: 'mosaic/networkCurrency',
             currentProfile: 'profile/currentProfile',
             addressesList: 'account/addressesList',
-            optInAddressesList: 'account/optInAddressesList',
             selectedAccounts: 'account/selectedAddressesToInteract',
-            selectedOptInAccounts: 'account/selectedAddressesOptInToInteract',
         }),
     },
     components: { MosaicAmountDisplay },
@@ -115,22 +113,10 @@ export default class AccountSelectionTs extends Vue {
     public selectedAccounts: number[];
 
     /**
-     * Map of selected opt in accounts
-     * @var {number[]}
-     */
-    public selectedOptInAccounts: number[];
-
-    /**
      * List of addresses
      * @var {Address[]}
      */
     public addressesList: Address[];
-
-    /**
-     * List of opt in addresses
-     * @var {Address[]}
-     */
-    public optInAddressesList: { address: Address; index: number }[];
 
     public networkCurrency: NetworkCurrencyModel;
 
@@ -142,6 +128,7 @@ export default class AccountSelectionTs extends Vue {
         this.derivation = new DerivationService(this.currentProfile.networkType);
         this.accountService = new AccountService();
         await this.$store.dispatch('temporary/initialize');
+        this.$store.commit('account/resetPublicKeyList');
         this.$store.commit('account/resetAddressesList');
         this.$store.commit('account/resetOptInAddressesList');
         this.$store.commit('account/resetSelectedAddressesToInteract');
@@ -151,7 +138,6 @@ export default class AccountSelectionTs extends Vue {
             setTimeout(async () => {
                 this.isLoading = true;
                 await this.initAccounts();
-                await this.initOptInAccounts();
                 this.isLoading = false;
             }, 200);
         });
@@ -226,7 +212,9 @@ export default class AccountSelectionTs extends Vue {
     private async initAccounts() {
         try {
             // - generate addresses
-            const addressesList = await this.accountService.getTrezorAccounts(this.currentProfile.networkType, 10);
+            const publicKeyList = await this.accountService.getTrezorPublicKeys(this.currentProfile.networkType, 10);
+            const addressesList = publicKeyList.map((publicKey) => PublicAccount.createFromPublicKey(publicKey.toUpperCase(), this.currentProfile.networkType).address);
+            this.$store.commit('account/publicKeyList', publicKeyList);
             this.$store.commit('account/addressesList', addressesList);
 
             // fetch accounts info
@@ -237,57 +225,6 @@ export default class AccountSelectionTs extends Vue {
                 this.addressBalanceMap = {
                     ...this.addressBalanceMap,
                     ...this.mapBalanceByAddress(accountsInfo, this.networkMosaic, this.addressesList),
-                };
-            } else {
-                this.$store.dispatch('notification/ADD_ERROR', 'symbol_node_cannot_connect');
-                return;
-            }
-        } catch (error) {
-            this.errorNotificationHandler(error);
-        }
-    }
-
-    /**
-     * Fetch account balances and map to address
-     * @return {void}
-     */
-    private async initOptInAccounts() {
-        try {
-            // - generate addresses
-            const possibleOptInAccounts: any[] = await this.accountService.getTrezorPublicKeys(
-                this.currentProfile.networkType,
-                10,
-                Network.BITCOIN,
-            );
-
-            // whitelist opt in accounts
-            const key = this.currentProfile.networkType === NetworkType.MAIN_NET ? 'mainnet' : 'testnet';
-            const whitelisted = process.env.KEYS_WHITELIST[key];
-            const optInAccounts = possibleOptInAccounts
-                .map((publicKey, index) => ({
-                    publicKey: publicKey.toUpperCase(),
-                    index: index,
-                }))
-                .filter((account) => whitelisted.indexOf(account.publicKey) >= 0);
-            if (optInAccounts.length === 0) {
-                return;
-            }
-            const optInAddressesList = optInAccounts.map((account) => ({
-                address: PublicAccount.createFromPublicKey(account.publicKey, this.currentProfile.networkType).address,
-                index: account.index,
-            }));
-            this.$store.commit('account/optInAddressesList', optInAddressesList);
-
-            const optInAddresses = this.optInAddressesList.map((account) => account.address);
-
-            // fetch accounts info
-            const repositoryFactory = this.$store.getters['network/repositoryFactory'] as RepositoryFactory;
-            if (repositoryFactory) {
-                const accountsInfo = await repositoryFactory.createAccountRepository().getAccountsInfo(optInAddresses).toPromise();
-                // map balances
-                this.optInAddressBalanceMap = {
-                    ...this.optInAddressBalanceMap,
-                    ...this.mapBalanceByAddress(accountsInfo, this.networkMosaic, optInAddresses),
                 };
             } else {
                 this.$store.dispatch('notification/ADD_ERROR', 'symbol_node_cannot_connect');

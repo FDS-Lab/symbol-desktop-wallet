@@ -20,7 +20,7 @@ import { AccountModel, AccountType } from '@/core/database/entities/AccountModel
 import { AccountService } from '@/services/AccountService';
 import { DerivationPathLevels, DerivationService } from '@/services/DerivationService';
 import { Network } from 'symbol-hd-wallets';
-import { Password } from 'symbol-sdk';
+import { PublicAccount, Password } from 'symbol-sdk';
 import { SimpleObjectStorage } from '@/core/database/backends/SimpleObjectStorage';
 import { ProfileModel } from '@/core/database/entities/ProfileModel';
 
@@ -33,8 +33,8 @@ import { ProfileModel } from '@/core/database/entities/ProfileModel';
             networkCurrency: 'mosaic/networkCurrency',
             currentPassword: 'temporary/password',
             currentMnemonic: 'temporary/mnemonic',
+            publicKeyList: 'account/publicKeyList',
             selectedAccounts: 'account/selectedAddressesToInteract',
-            selectedOptInAccounts: 'account/selectedAddressesOptInToInteract',
         }),
     },
 })
@@ -77,6 +77,12 @@ export default class FinalizeTs extends Vue {
     public accountService: AccountService;
 
     /**
+     * List of publicKey
+     * @var {string[]}
+     */
+    public publicKeyList: string[];
+
+    /**
      * Map of selected accounts
      * @var {number[]}
      */
@@ -106,9 +112,9 @@ export default class FinalizeTs extends Vue {
         termsAndConditions: boolean;
         privacyAndPolicy: boolean;
     } = {
-        termsAndConditions: false,
-        privacyAndPolicy: false,
-    };
+            termsAndConditions: false,
+            privacyAndPolicy: false,
+        };
 
     /**
      * Profile Service
@@ -191,7 +197,7 @@ export default class FinalizeTs extends Vue {
     }
 
     /**
-     * Create an account instance from mnemonic and path
+     * Create an accounts
      * @return {AccountModel}
      */
     private async createAccountsFromPathIndexes(indexes: number[]): Promise<AccountModel[]> {
@@ -204,7 +210,10 @@ export default class FinalizeTs extends Vue {
             return this.derivation.incrementPathLevel(accountPath, DerivationPathLevels.Profile, index);
         });
 
-        const accounts = await this.accountService.generateTrezorAccountsPaths(this.currentProfile.networkType, paths);
+        // const accounts = await this.accountService.generateTrezorAccountsPaths(this.currentProfile.networkType, paths);
+        const publicKeys = indexes.map(index => this.publicKeyList[index])
+
+        const accounts = publicKeys.map((publicKey) => PublicAccount.createFromPublicKey(publicKey.toUpperCase(), this.currentProfile.networkType));
 
         return accounts.map((account, i) => {
             return {
@@ -214,39 +223,7 @@ export default class FinalizeTs extends Vue {
                 node: '',
                 type: AccountType.LEDGER,
                 address: account.address['plain'](),
-                publicKey: accounts[i].publicKey,
-                encryptedPrivateKey: '',
-                path: paths[i],
-                isMultisig: false,
-            };
-        });
-    }
-
-    /**
-     * Create opt-in account instances from Trezor device and paths
-     * @return {AccountModel}
-     */
-    private async createOptInAccountsFromPathIndexes(indexes: number[]): Promise<AccountModel[]> {
-        const accountPath = AccountService.getAccountPathByNetworkType(this.currentProfile.networkType);
-        const paths = indexes.map((index) => {
-            if (index == 0) {
-                return accountPath;
-            }
-
-            return this.derivation.incrementPathLevel(accountPath, DerivationPathLevels.Profile, index);
-        });
-
-        const accounts = await this.accountService.generateTrezorAccountsPaths(this.currentProfile.networkType, paths, Network.BITCOIN);
-
-        return accounts.map((account, i) => {
-            return {
-                id: SimpleObjectStorage.generateIdentifier(),
-                profileName: this.currentProfile.profileName,
-                name: `Opt In Trezor Account ${indexes[i] + 1}`,
-                node: '',
-                type: AccountType.LEDGER_OPT_IN,
-                address: account.address['plain'](),
-                publicKey: accounts[i].publicKey,
+                publicKey: account.publicKey,
                 encryptedPrivateKey: '',
                 path: paths[i],
                 isMultisig: false,
@@ -259,9 +236,8 @@ export default class FinalizeTs extends Vue {
             this.isLoading = true;
             // create account models
             const normalAccounts = await this.createAccountsFromPathIndexes(this.selectedAccounts);
-            const optInAccounts = await this.createOptInAccountsFromPathIndexes(this.selectedOptInAccounts);
 
-            const accounts = [...optInAccounts, ...normalAccounts];
+            const accounts = [...normalAccounts];
             // save newly created accounts
             accounts.forEach((account, index) => {
                 // Store accounts using repository

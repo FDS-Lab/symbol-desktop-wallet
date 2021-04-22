@@ -473,11 +473,9 @@ export class AccountService {
    * Get list of address from Trezor device
    * @param {NetworkType} networkType
    * @param {number} count
-   * @param curve
-   * @return {Promise<Address[]>}
+   * @return {Promise<string[]>}
    */
-    public async getTrezorAccounts(networkType: NetworkType, count: number = 10, curve = Network.SYMBOL): Promise<Address[]> {
-        const isOptinTrezorWallet = curve === Network.BITCOIN;
+    public async getTrezorPublicKeys(networkType: NetworkType, count: number = 10): Promise<string[]> {
         const derivationService = new DerivationService(networkType);
 
         const default_path = AccountService.getAccountPathByNetworkType(networkType);
@@ -489,58 +487,9 @@ export class AccountService {
 
             return derivationService.incrementPathLevel(default_path, DerivationPathLevels.Profile, index);
         });
-        const publicKeys: string[] = await this.getTrezorPublicKeyByPaths(networkType, paths, false, isOptinTrezorWallet);
-
-        return publicKeys.map((publicKey) => PublicAccount.createFromPublicKey(publicKey.toUpperCase(), networkType).address);
-    }
-
-    /**
-     * Get list of public key from Trezor device
-     * @param {NetworkType} networkType
-     * @param {number} count
-     * @param curve
-     * @return {Promise<string[]>}
-     */
-    public async getTrezorPublicKeys(networkType: NetworkType, count: number = 10, curve = Network.SYMBOL): Promise<string[]> {
-        const isOptinTrezorWallet = curve === Network.BITCOIN;
-        const derivationService = new DerivationService(networkType);
-
-        const default_path = AccountService.getAccountPathByNetworkType(networkType);
-        // increment derivation path \a count times
-        const paths = [...Array(count).keys()].map((index) => {
-            if (index == 0) {
-                return default_path;
-            }
-
-            return derivationService.incrementPathLevel(default_path, DerivationPathLevels.Profile, index);
-        });
-        const publicKeys: string[] = await this.getTrezorPublicKeyByPaths(networkType, paths, false, isOptinTrezorWallet);
+        const publicKeys: string[] = await this.getTrezorPublicKeyByPaths(networkType, paths, false);
 
         return publicKeys.map(publicKey => publicKey.toUpperCase());
-    }
-
-    /**
-     * Derive accounts of trezor using an array of paths
-     * @param {NetworkType} networkType
-     * @param {string[]} paths
-     * @param curve
-     * @param {boolean} trezorDisplay
-     * @returns {Promise<AccountModel[]>}
-     */
-    public async generateTrezorAccountsPaths(
-        networkType: NetworkType,
-        paths: string[],
-        curve = Network.SYMBOL,
-        trezorDisplay: boolean = false,
-    ): Promise<AccountModel[]> {
-        const isOptinLedgerWallet = curve === Network.BITCOIN;
-        const accounts = [];
-        for (const path of paths) {
-            const publicKey = await this.getLedgerPublicKeyByPath(networkType, path, trezorDisplay, isOptinLedgerWallet);
-            const account = PublicAccount.createFromPublicKey(publicKey.toUpperCase(), networkType);
-            accounts.push(account);
-        }
-        return accounts;
     }
 
     /**
@@ -548,14 +497,12 @@ export class AccountService {
      * @param {NetworkType} networkType
      * @param {string} paths
      * @param {boolean} trezorDisplay
-     * @param {boolean} isOptinTrezorWallet
      * @return {Promise<string>}
      */
     public async getTrezorPublicKeyByPaths(
         networkType: NetworkType,
         paths: string[],
         trezorDisplay: boolean,
-        isOptinTrezorWallet: boolean,
     ): Promise<string[]> {
         for (const path of paths) {
             if (!DerivationPathValidator.validate(path, networkType)) {
@@ -566,7 +513,7 @@ export class AccountService {
         }
 
         const trezorService = new TrezorService(networkType);
-        const result = await trezorService.getAccounts(paths, trezorDisplay, isOptinTrezorWallet);
+        const result = await trezorService.getAccounts(paths, trezorDisplay);
         return result;
     }
 
