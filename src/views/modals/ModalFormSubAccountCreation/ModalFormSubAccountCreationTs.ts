@@ -36,6 +36,7 @@ import { FilterHelpers } from '@/core/utils/FilterHelpers';
 import { ValidationRuleset } from '@/core/validation/ValidationRuleset';
 import { DerivationService } from '@/services/DerivationService';
 import { LedgerService } from '@/services/LedgerService';
+import { TrezorService } from '@/services/TrezorService';
 import { MnemonicPassPhrase } from 'symbol-hd-wallets';
 import { ValidationObserver, ValidationProvider } from 'vee-validate';
 import { AccountService } from '@/services/AccountService';
@@ -189,8 +190,12 @@ export class ModalFormSubAccountCreationTs extends Vue {
         return this.currentAccount.type === AccountType.LEDGER || this.currentAccount.type === AccountType.LEDGER_OPT_IN;
     }
 
+    public get isTrezor(): boolean {
+        return this.currentAccount.type === AccountType.TREZOR;
+    }
+
     public get isPrivateKeyAccount(): boolean {
-        return this.isPrivateKeyProfile && !this.isLedger;
+        return this.isPrivateKeyProfile && !this.isLedger && !this.isTrezor;
     }
 
     /// end-region computed properties getter/setter
@@ -237,6 +242,27 @@ export class ModalFormSubAccountCreationTs extends Vue {
     }
 
     /**
+     * Trezor popup notification handler
+     */
+    private trezorErrorNotificationHandler(error: any) {
+        console.log("trezorErrorNotificationHandler", error)
+        if (typeof error === 'string') {
+            switch (error) {
+                case 'Popup closed':
+                    this.$store.dispatch('notification/ADD_ERROR', 'trezor_popup_closed');
+                    return;
+                case 'Cancelled':
+                    this.$store.dispatch('notification/ADD_ERROR', 'trezor_user_reject_request');
+                    return;
+                // case 'ledger_connected_other_app':
+                //     this.$store.dispatch('notification/ADD_ERROR', 'ledger_connected_other_app');
+                //     return;
+            }
+        }
+        this.$store.dispatch('notification/ADD_ERROR', this.$t('add_account_failed', { reason: error.message || error }));
+    }
+
+    /**
      * Close backup reminder modal
      * @return {void}
      */
@@ -250,6 +276,7 @@ export class ModalFormSubAccountCreationTs extends Vue {
      * When account is unlocked, the sub account can be created
      */
     public async onAccountUnlocked(unlockResult: { password: Password }) {
+        console.log("onacc")
         this.currentPassword = unlockResult.password;
         if (this.formItems.type === 'privatekey_account') {
             this.isModalBackupReminderShown = true;
@@ -324,6 +351,7 @@ export class ModalFormSubAccountCreationTs extends Vue {
      */
     private deriveNextChildAccount(childAccountName: string): AccountModel | null {
         try {
+            console.log("dre")
             if (this.isLedger) {
                 this.importSubAccountFromLedger(childAccountName)
                     .then((res) => {
@@ -337,6 +365,21 @@ export class ModalFormSubAccountCreationTs extends Vue {
                     })
                     .catch((error) => {
                         this.errorNotificationHandler(error);
+                    });
+            } else if (this.isTrezor) {
+                console.log("he")
+                this.importSubAccountFromTrezor(childAccountName)
+                    .then((res) => {
+                        this.accountService.saveAccount(res);
+                        // - update app state
+                        this.$store.dispatch('profile/ADD_ACCOUNT', res);
+                        this.$store.dispatch('account/SET_CURRENT_ACCOUNT', res);
+                        this.$store.dispatch('account/SET_KNOWN_ACCOUNTS', this.currentProfile.accounts);
+                        this.$store.dispatch('notification/ADD_SUCCESS', NotificationType.OPERATION_SUCCESS);
+                        this.$emit('submit', this.formItems);
+                    })
+                    .catch((error) => {
+                        this.trezorErrorNotificationHandler(error);
                     });
             } else {
                 // - get next path
@@ -408,6 +451,38 @@ export class ModalFormSubAccountCreationTs extends Vue {
             throw error;
         }
     }
+
+    async importSubAccountFromTrezor(childAccountName: string): Promise<AccountModel> | null {
+        try {
+            const accountService = new AccountService();
+            const nextPath = this.paths.getNextAccountPath(this.knownPaths);
+            const publicKey = await accountService.getTrezorPublicKeyByPath(
+                this.currentProfile.networkType,
+                nextPath,
+                false,
+            );
+            const address = PublicAccount.createFromPublicKey(publicKey, this.currentProfile.networkType).address;
+            return {
+                id: SimpleObjectStorage.generateIdentifier(),
+                name: childAccountName,
+                profileName: this.currentProfile.profileName,
+                node: '',
+                type: AccountType.fromDescriptor('Trezor'),
+                address: address.plain(),
+                publicKey: publicKey.toUpperCase(),
+                encryptedPrivateKey: '',
+                path: nextPath,
+                isMultisig: false,
+            };
+        } catch (error) {
+            this.$store.dispatch('SET_UI_DISABLED', {
+                isDisabled: false,
+                message: '',
+            });
+            throw error;
+        }
+    }
+
     public get isValidName(): boolean {
         if (!this.formItems.name) {
             return false;

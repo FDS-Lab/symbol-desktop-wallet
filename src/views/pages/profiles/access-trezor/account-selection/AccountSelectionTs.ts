@@ -193,6 +193,27 @@ export default class AccountSelectionTs extends Vue {
     }
 
     /**
+     * Trezor popup notification handler
+     */
+    private trezorErrorNotificationHandler(error: any) {
+        console.log("trezorErrorNotificationHandler", error)
+        if (typeof error === 'string') {
+            switch (error) {
+                case 'Popup closed':
+                    this.$store.dispatch('notification/ADD_ERROR', 'trezor_popup_closed');
+                    return;
+                case 'Cancelled':
+                    this.$store.dispatch('notification/ADD_ERROR', 'trezor_user_reject_request');
+                    return;
+                // case 'ledger_connected_other_app':
+                //     this.$store.dispatch('notification/ADD_ERROR', 'ledger_connected_other_app');
+                //     return;
+            }
+        }
+        this.$store.dispatch('notification/ADD_ERROR', this.$t('add_account_failed', { reason: error.message || error }));
+    }
+
+    /**
      * Finalize the account selection process by adding
      * the selected accounts to storage.
      * @return {void}
@@ -212,8 +233,10 @@ export default class AccountSelectionTs extends Vue {
     private async initAccounts() {
         try {
             // - generate addresses
-            const publicKeyList = await this.accountService.getTrezorPublicKeys(this.currentProfile.networkType, 10);
-            const addressesList = publicKeyList.map((publicKey) => PublicAccount.createFromPublicKey(publicKey.toUpperCase(), this.currentProfile.networkType).address);
+            const accounts = await this.accountService.getTrezorAccounts(this.currentProfile.networkType, 10);
+            const publicKeyList = accounts.map(account => account.publicKey);
+            const addressesList = accounts.map(account => account.address);
+
             this.$store.commit('account/publicKeyList', publicKeyList);
             this.$store.commit('account/addressesList', addressesList);
 
@@ -231,7 +254,8 @@ export default class AccountSelectionTs extends Vue {
                 return;
             }
         } catch (error) {
-            this.errorNotificationHandler(error);
+            this.trezorErrorNotificationHandler(error);
+            this.$router.push({ name: 'profiles.accessTrezor.info' });
         }
     }
 
