@@ -23,8 +23,8 @@ export class TrezorService {
 
     public async getAccounts(paths: string[], display: boolean): Promise<string[]> {
         // Example: 
-        // NEM2 Get multi public key:
-        // TrezorConnect.nem2GetPublicKey({
+        // Symbol Get multi public key:
+        // TrezorConnect.symbolGetPublicKey({
         //     bundle: [
         //         { path: "m/44'/4343'/0'/0'/0'", showOnTrezor: false }, // account 1
         //         { path: "m/44'/4343'/1'/0'/0'", showOnTrezor: false }, // account 2
@@ -58,7 +58,7 @@ export class TrezorService {
         const param = {
             bundle: paths.map(path => ({ path, showOnTrezor: !!display }))
         }
-        const { success, payload } = await TrezorConnect.nem2GetPublicKey(param);
+        const { success, payload } = await TrezorConnect.symbolGetPublicKey(param);
         if (!success) throw payload.error;
         const result = payload.map(elm => elm.publicKey)
         return result;
@@ -66,8 +66,8 @@ export class TrezorService {
 
     public async getAccount(path: string, display: boolean): Promise<string> {
         // Example:
-        // NEM2 Get multi public key:
-        // TrezorConnect.nem2GetPublicKey(
+        // Symbol Get multi public key:
+        // TrezorConnect.symbolGetPublicKey(
         //     { path: "m/44'/4343'/0'/0'/0'", showOnTrezor: false }
         // );
         // Result:
@@ -91,7 +91,7 @@ export class TrezorService {
             throw new Error(errorMessage);
         }
         const param = { path, showOnTrezor: !!display }
-        const { success, payload } = await TrezorConnect.nem2GetPublicKey(param);
+        const { success, payload } = await TrezorConnect.symbolGetPublicKey(param);
         if (!success) throw payload.error;
         const result = payload.publicKey
         return result;

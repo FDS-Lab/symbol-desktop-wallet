@@ -269,7 +269,6 @@ function initialize() {
     const height = parseInt(width / (1920 / 1080))
 
     const windowOptions = {
-      // Disable for Trezor popup in small size
       minWidth: width,
       minHeight: height,
       width: width,
