@@ -17,7 +17,6 @@
 import { Component, Vue } from 'vue-property-decorator';
 import { mapGetters } from 'vuex';
 import { LedgerService } from '@/services/LedgerService';
-import { TrezorService } from '@/services/TrezorService';
 import { ProfileModel } from '@/core/database/entities/ProfileModel';
 // child components
 // @ts-ignore
@@ -180,10 +179,9 @@ export class AccountDetailsPageTs extends Vue {
     }
 
     /**
-     * Trezor popup notification handler
+     * Trezor popup error notification handler
      */
     private trezorErrorNotificationHandler(error: any) {
-        console.log("trezorErrorNotificationHandler", error)
         if (typeof error === 'string') {
             switch (error) {
                 case 'Popup closed':
@@ -192,9 +190,9 @@ export class AccountDetailsPageTs extends Vue {
                 case 'Cancelled':
                     this.$store.dispatch('notification/ADD_ERROR', 'trezor_user_reject_request');
                     return;
-                // case 'ledger_connected_other_app':
-                //     this.$store.dispatch('notification/ADD_ERROR', 'ledger_connected_other_app');
-                //     return;
+                case 'Device call in progress':
+                    this.$store.dispatch('notification/ADD_ERROR', 'trezor_existed_popup_openning');
+                    return;
             }
         }
         this.$store.dispatch('notification/ADD_ERROR', this.$t('add_account_failed', { reason: error.message || error }));
@@ -240,7 +238,6 @@ export class AccountDetailsPageTs extends Vue {
                 true
             );
             const accountPublicKey = currentAccount.publicKey.toUpperCase();
-            console.log("accountPublicKey", accountPublicKey)
             if (accountPublicKey === this.currentAccount.publicKey.toUpperCase()) {
                 this.$store.dispatch('notification/ADD_SUCCESS', 'trezor_correct_account');
             } else {

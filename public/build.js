@@ -269,8 +269,9 @@ function initialize() {
     const height = parseInt(width / (1920 / 1080))
 
     const windowOptions = {
-      // minWidth: width,
-      // minHeight: height,
+      // Disable for Trezor popup in small size
+      minWidth: width,
+      minHeight: height,
       width: width,
       height: height,
       title: app.getName(),
@@ -315,16 +316,18 @@ function initialize() {
   })
   app.on('web-contents-created', (e, webContents) => {
     webContents.on('new-window', (event, url, frameName, disposition, options, _additionalFeatures) => {
-      // Specific for Trezor popup run in localhost for dev process
+      // Specific for Trezor popup (currently in localhost for dev process)
       if (url.includes('localhost')) {
         event.preventDefault();
+        // For small size popup
+        delete options.minWidth
+        delete options.minHeight
         const connectPopup = new BrowserWindow(options);
-        event.newGuest = connectPopup;
-        // <- Make center popup
+        // Make center popup
         connectPopup.hide();
         connectPopup.center();
         connectPopup.show();
-        // ->
+        event.newGuest = connectPopup;
       } else {
         event.preventDefault();
         if (url.match(/^(?:http(s)?:\/\/)?[\w.-]+(?:\.[\w\.-]+)+[\w\-\._~:/?#[\]@!\$&'\(\)\*\+,;=.]+$/g)) {

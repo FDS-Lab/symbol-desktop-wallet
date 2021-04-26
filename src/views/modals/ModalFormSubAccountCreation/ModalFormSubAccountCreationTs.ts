@@ -36,7 +36,6 @@ import { FilterHelpers } from '@/core/utils/FilterHelpers';
 import { ValidationRuleset } from '@/core/validation/ValidationRuleset';
 import { DerivationService } from '@/services/DerivationService';
 import { LedgerService } from '@/services/LedgerService';
-import { TrezorService } from '@/services/TrezorService';
 import { MnemonicPassPhrase } from 'symbol-hd-wallets';
 import { ValidationObserver, ValidationProvider } from 'vee-validate';
 import { AccountService } from '@/services/AccountService';
@@ -242,10 +241,9 @@ export class ModalFormSubAccountCreationTs extends Vue {
     }
 
     /**
-     * Trezor popup notification handler
+     * Trezor popup error notification handler
      */
     private trezorErrorNotificationHandler(error: any) {
-        console.log("trezorErrorNotificationHandler", error)
         if (typeof error === 'string') {
             switch (error) {
                 case 'Popup closed':
@@ -254,9 +252,9 @@ export class ModalFormSubAccountCreationTs extends Vue {
                 case 'Cancelled':
                     this.$store.dispatch('notification/ADD_ERROR', 'trezor_user_reject_request');
                     return;
-                // case 'ledger_connected_other_app':
-                //     this.$store.dispatch('notification/ADD_ERROR', 'ledger_connected_other_app');
-                //     return;
+                case 'Device call in process':
+                    this.$store.dispatch('notification/ADD_ERROR', 'trezor_existed_popup_openning');
+                    return;
             }
         }
         this.$store.dispatch('notification/ADD_ERROR', this.$t('add_account_failed', { reason: error.message || error }));
@@ -276,7 +274,6 @@ export class ModalFormSubAccountCreationTs extends Vue {
      * When account is unlocked, the sub account can be created
      */
     public async onAccountUnlocked(unlockResult: { password: Password }) {
-        console.log("onacc")
         this.currentPassword = unlockResult.password;
         if (this.formItems.type === 'privatekey_account') {
             this.isModalBackupReminderShown = true;
@@ -351,7 +348,6 @@ export class ModalFormSubAccountCreationTs extends Vue {
      */
     private deriveNextChildAccount(childAccountName: string): AccountModel | null {
         try {
-            console.log("dre")
             if (this.isLedger) {
                 this.importSubAccountFromLedger(childAccountName)
                     .then((res) => {
@@ -367,7 +363,6 @@ export class ModalFormSubAccountCreationTs extends Vue {
                         this.errorNotificationHandler(error);
                     });
             } else if (this.isTrezor) {
-                console.log("he")
                 this.importSubAccountFromTrezor(childAccountName)
                     .then((res) => {
                         this.accountService.saveAccount(res);

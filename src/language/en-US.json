@@ -601,6 +601,7 @@
     "ledger_user_reject_request": "Request canceled by user",
     "trezor_user_reject_request": "Request canceled by user",
     "trezor_popup_closed": "Trezor connection popup was closed",
+    "trezor_existed_popup_openning": "A Trezor connection popup is opening, please check it",
     "link": "Link",
     "link_action": "Link Action",
     "linked_account_address": "Linked Account Address",

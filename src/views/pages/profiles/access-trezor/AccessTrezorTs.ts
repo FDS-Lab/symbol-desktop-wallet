@@ -35,13 +35,11 @@ import MosaicAmountDisplay from '@/components/MosaicAmountDisplay/MosaicAmountDi
             currentProfile: 'profile/currentProfile',
             currentPassword: 'temporary/password',
             addressesList: 'account/addressesList',
-            optInAddressesList: 'account/optInAddressesList',
             selectedAccounts: 'account/selectedAddressesToInteract',
-            optInSelectedAccounts: 'account/selectedAddressesOptInToInteract',
         }),
     },
 })
-export default class AccessLedgerTs extends Vue {
+export default class AccessTrezorTs extends Vue {
     /**
      * Formatting helpers
      * @protected
@@ -87,12 +85,6 @@ export default class AccessLedgerTs extends Vue {
     public addressesList: Address[];
 
     /**
-     * List of opt in addresses
-     * @var {Address[]}
-     */
-    public optInAddressesList: { address: Address; index: number }[];
-
-    /**
      * Balances map
      * @var {any}
      */
@@ -105,16 +97,9 @@ export default class AccessLedgerTs extends Vue {
     public selectedAccounts: number[];
 
     /**
-     * Map of selected accounts
-     * @var {number[]}
-     */
-    public optInSelectedAccounts: number[];
-
-    /**
      * Indicates if account balance and addresses are already fetched
      */
     private initialized: boolean = false;
-    private optInInitialized: boolean = false;
 
     /**
      * Hook called when the page is mounted
@@ -124,51 +109,12 @@ export default class AccessLedgerTs extends Vue {
         this.accountService = new AccountService();
         await this.$store.dispatch('temporary/initialize');
         this.$store.commit('account/resetSelectedAddressesToInteract');
-        this.$store.commit('account/resetSelectedAddressesOptInToInteract');
     }
 
     /**
      * Error notification handler
      */
     private errorNotificationHandler(error: any) {
-        if (error.message && error.message.includes('cannot open device with path')) {
-            error.errorCode = 'ledger_connected_other_app';
-        }
-        if (error.message && error.message.includes('A transfer error')) {
-            return;
-        }
-        if (error.errorCode) {
-            switch (error.errorCode) {
-                case 'NoDevice':
-                    this.$store.dispatch('notification/ADD_ERROR', 'ledger_no_device');
-                    return;
-                case 'ledger_not_supported_app':
-                    this.$store.dispatch('notification/ADD_ERROR', 'ledger_not_supported_app');
-                    return;
-                case 'ledger_connected_other_app':
-                    this.$store.dispatch('notification/ADD_ERROR', 'ledger_connected_other_app');
-                    return;
-                case 26628:
-                    this.$store.dispatch('notification/ADD_ERROR', 'ledger_device_locked');
-                    return;
-                case 26368:
-                case 27904:
-                    this.$store.dispatch('notification/ADD_ERROR', 'ledger_not_opened_app');
-                    return;
-                case 27264:
-                    this.$store.dispatch('notification/ADD_ERROR', 'ledger_not_using_xym_app');
-                    return;
-                case 27013:
-                    this.$store.dispatch('notification/ADD_ERROR', 'ledger_user_reject_request');
-                    return;
-            }
-        } else if (error.name) {
-            switch (error.name) {
-                case 'TransportOpenUserCancelled':
-                    this.$store.dispatch('notification/ADD_ERROR', 'ledger_no_device_selected');
-                    return;
-            }
-        }
         this.$store.dispatch('notification/ADD_ERROR', this.$t('create_profile_failed', { reason: error.message || error }));
     }
 
@@ -198,43 +144,6 @@ export default class AccessLedgerTs extends Vue {
             }
 
             this.initialized = true;
-        } catch (error) {
-            this.errorNotificationHandler(error);
-        }
-    }
-
-    /**
-     * Fetch account balances and map to address
-     * @return {void}
-     */
-    @Watch('optInSelectedAccounts')
-    private async initOptInAccounts(): Promise<void> {
-        try {
-            if (this.optInInitialized || !this.optInSelectedAccounts.length) {
-                return;
-            }
-
-            // whitelist opt in accounts
-            if (this.optInAddressesList.length === 0) {
-                return;
-            }
-            const optInAddresses = this.optInAddressesList.map((account) => account.address);
-
-            // fetch accounts info
-            const repositoryFactory = this.$store.getters['network/repositoryFactory'] as RepositoryFactory;
-            if (repositoryFactory) {
-                const accountsInfo = await repositoryFactory.createAccountRepository().getAccountsInfo(optInAddresses).toPromise();
-                // map balances
-                this.addressMosaicMap = {
-                    ...this.addressMosaicMap,
-                    ...this.mapBalanceByAddress(accountsInfo, this.networkMosaic),
-                };
-            } else {
-                this.$store.dispatch('notification/ADD_ERROR', 'symbol_node_cannot_connect');
-                return;
-            }
-
-            this.optInInitialized = true;
         } catch (error) {
             this.errorNotificationHandler(error);
         }
@@ -286,13 +195,5 @@ export default class AccessLedgerTs extends Vue {
      */
     protected onRemoveAddress(pathNumber: number): void {
         this.$store.commit('account/removeFromSelectedAddressesToInteract', pathNumber);
-    }
-    /**
-     * Called when clicking on an address to remove it from the selection
-     * @protected
-     * @param {number} pathNumber
-     */
-    protected onRemoveOptInAddress(pathNumber: number): void {
-        this.$store.commit('account/removeFromSelectedAddressesOptInToInteract', pathNumber);
     }
 }

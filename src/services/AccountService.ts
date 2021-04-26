@@ -339,7 +339,6 @@ export class AccountService {
             const publicKey = await this.getLedgerPublicKeyByPath(networkType, path, false, isOptinLedgerWallet);
             publicKeys.push(publicKey.toUpperCase());
         }
-        console.log('led', JSON.stringify(publicKeys))
         return publicKeys.map((publicKey) => PublicAccount.createFromPublicKey(publicKey, networkType).address);
     }
 
@@ -368,7 +367,6 @@ export class AccountService {
             const publicKey = await this.getLedgerPublicKeyByPath(networkType, path, false, isOptinLedgerWallet);
             publicKeys.push(publicKey.toUpperCase());
         }
-        console.log('opt led', JSON.stringify(publicKeys))
         return publicKeys.map((publicKey) => PublicAccount.createFromPublicKey(publicKey, networkType).publicKey);
     }
 
@@ -470,7 +468,7 @@ export class AccountService {
     }
 
     /**
-   * Get list of address from Trezor device
+   * Get list of accounts from Trezor device
    * @param {NetworkType} networkType
    * @param {number} count
    * @return {Promise<string[]>}
@@ -494,7 +492,7 @@ export class AccountService {
     }
 
     /**
-     * Derive an public key from Trezor device using a path
+     * Derive Trezor public keys from Trezor device by paths
      * @param {NetworkType} networkType
      * @param {string} paths
      * @param {boolean} trezorDisplay

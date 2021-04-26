@@ -16,7 +16,6 @@
 import { Component, Vue } from 'vue-property-decorator';
 import { mapGetters } from 'vuex';
 import { AccountInfo, Address, MosaicId, PublicAccount, NetworkType, RepositoryFactory } from 'symbol-sdk';
-import { Network } from 'symbol-hd-wallets';
 // internal dependencies
 import { DerivationService } from '@/services/DerivationService';
 import { AccountService } from '@/services/AccountService';
@@ -101,12 +100,6 @@ export default class AccountSelectionTs extends Vue {
     public addressBalanceMap: { [address: string]: number } = {};
 
     /**
-     * Balances map
-     * @var {any}
-     */
-    public optInAddressBalanceMap: { [address: string]: number } = {};
-
-    /**
      * Map of selected accounts
      * @var {number[]}
      */
@@ -130,9 +123,7 @@ export default class AccountSelectionTs extends Vue {
         await this.$store.dispatch('temporary/initialize');
         this.$store.commit('account/resetPublicKeyList');
         this.$store.commit('account/resetAddressesList');
-        this.$store.commit('account/resetOptInAddressesList');
         this.$store.commit('account/resetSelectedAddressesToInteract');
-        this.$store.commit('account/resetSelectedAddressesOptInToInteract');
 
         Vue.nextTick().then(() => {
             setTimeout(async () => {
@@ -148,55 +139,9 @@ export default class AccountSelectionTs extends Vue {
     }
 
     /**
-     * Error notification handler
-     */
-    private errorNotificationHandler(error: any) {
-        if (error.message && error.message.includes('cannot open device with path')) {
-            error.errorCode = 'ledger_connected_other_app';
-        }
-        if (error.message && error.message.includes('A transfer error')) {
-            return;
-        }
-        if (error.errorCode) {
-            switch (error.errorCode) {
-                case 'NoDevice':
-                    this.$store.dispatch('notification/ADD_ERROR', 'ledger_no_device');
-                    return;
-                case 'ledger_not_supported_app':
-                    this.$store.dispatch('notification/ADD_ERROR', 'ledger_not_supported_app');
-                    return;
-                case 'ledger_connected_other_app':
-                    this.$store.dispatch('notification/ADD_ERROR', 'ledger_connected_other_app');
-                    return;
-                case 26628:
-                    this.$store.dispatch('notification/ADD_ERROR', 'ledger_device_locked');
-                    return;
-                case 26368:
-                case 27904:
-                    this.$store.dispatch('notification/ADD_ERROR', 'ledger_not_opened_app');
-                    return;
-                case 27264:
-                    this.$store.dispatch('notification/ADD_ERROR', 'ledger_not_using_xym_app');
-                    return;
-                case 27013:
-                    this.$store.dispatch('notification/ADD_ERROR', 'ledger_user_reject_request');
-                    return;
-            }
-        } else if (error.name) {
-            switch (error.name) {
-                case 'TransportOpenUserCancelled':
-                    this.$store.dispatch('notification/ADD_ERROR', 'ledger_no_device_selected');
-                    return;
-            }
-        }
-        this.$store.dispatch('notification/ADD_ERROR', this.$t('create_profile_failed', { reason: error.message || error }));
-    }
-
-    /**
-     * Trezor popup notification handler
+     * Trezor popup error notification handler
      */
     private trezorErrorNotificationHandler(error: any) {
-        console.log("trezorErrorNotificationHandler", error)
         if (typeof error === 'string') {
             switch (error) {
                 case 'Popup closed':
@@ -205,9 +150,9 @@ export default class AccountSelectionTs extends Vue {
                 case 'Cancelled':
                     this.$store.dispatch('notification/ADD_ERROR', 'trezor_user_reject_request');
                     return;
-                // case 'ledger_connected_other_app':
-                //     this.$store.dispatch('notification/ADD_ERROR', 'ledger_connected_other_app');
-                //     return;
+                case 'Device call in process':
+                    this.$store.dispatch('notification/ADD_ERROR', 'trezor_existed_popup_openning');
+                    return;
             }
         }
         this.$store.dispatch('notification/ADD_ERROR', this.$t('add_account_failed', { reason: error.message || error }));
@@ -273,12 +218,5 @@ export default class AccountSelectionTs extends Vue {
      */
     protected onAddAddress(pathNumber: number): void {
         this.$store.commit('account/addToSelectedAddressesToInteract', pathNumber);
-    }
-    /**
-     * Called when clicking on an address to add it to the selection optin
-     * @param {number} pathNumber
-     */
-    protected onAddAddressOptIn(pathNumber: number): void {
-        this.$store.commit('account/addToSelectedAddressesOptInToInteract', pathNumber);
     }
 }
