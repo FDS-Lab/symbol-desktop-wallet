@@ -250,14 +250,18 @@ export class ModalFormSubAccountCreationTs extends Vue {
                     this.$store.dispatch('notification/ADD_ERROR', 'trezor_popup_closed');
                     return;
                 case 'Cancelled':
+                case 'Permissions not granted':
                     this.$store.dispatch('notification/ADD_ERROR', 'trezor_user_reject_request');
                     return;
                 case 'Device call in process':
                     this.$store.dispatch('notification/ADD_ERROR', 'trezor_existed_popup_openning');
                     return;
+                case 'Transport is missing':
+                    this.$store.dispatch('notification/ADD_ERROR', 'trezor_bridge_missing');
+                    return;
             }
         }
-        this.$store.dispatch('notification/ADD_ERROR', this.$t('add_account_failed', { reason: error.message || error }));
+        this.$store.dispatch('notification/ADD_ERROR', this.$t('trezor_popup_common_error', { reason: error.message || error }));
     }
 
     /**
