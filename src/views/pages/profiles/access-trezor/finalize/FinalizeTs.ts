@@ -105,9 +105,9 @@ export default class FinalizeTs extends Vue {
         termsAndConditions: boolean;
         privacyAndPolicy: boolean;
     } = {
-            termsAndConditions: false,
-            privacyAndPolicy: false,
-        };
+        termsAndConditions: false,
+        privacyAndPolicy: false,
+    };
 
     /**
      * Profile Service
@@ -166,9 +166,11 @@ export default class FinalizeTs extends Vue {
         });
 
         // const accounts = await this.accountService.generateTrezorAccountsPaths(this.currentProfile.networkType, paths);
-        const publicKeys = indexes.map(index => this.publicKeyList[index])
+        const publicKeys = indexes.map((index) => this.publicKeyList[index]);
 
-        const accounts = publicKeys.map((publicKey) => PublicAccount.createFromPublicKey(publicKey.toUpperCase(), this.currentProfile.networkType));
+        const accounts = publicKeys.map((publicKey) =>
+            PublicAccount.createFromPublicKey(publicKey.toUpperCase(), this.currentProfile.networkType),
+        );
 
         return accounts.map((account, i) => {
             return {

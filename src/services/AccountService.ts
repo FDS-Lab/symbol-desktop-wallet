@@ -468,11 +468,11 @@ export class AccountService {
     }
 
     /**
-   * Get list of accounts from Trezor device
-   * @param {NetworkType} networkType
-   * @param {number} count
-   * @return {Promise<string[]>}
-   */
+     * Get list of accounts from Trezor device
+     * @param {NetworkType} networkType
+     * @param {number} count
+     * @return {Promise<string[]>}
+     */
     public async getTrezorAccounts(networkType: NetworkType, count: number = 10): Promise<PublicAccount[]> {
         const derivationService = new DerivationService(networkType);
 
@@ -488,7 +488,6 @@ export class AccountService {
         const publicKeys: string[] = await this.getTrezorPublicKeyByPaths(networkType, paths, false);
 
         return publicKeys.map((publicKey) => PublicAccount.createFromPublicKey(publicKey, networkType));
-
     }
 
     /**
@@ -498,11 +497,7 @@ export class AccountService {
      * @param {boolean} trezorDisplay
      * @return {Promise<string>}
      */
-    public async getTrezorPublicKeyByPaths(
-        networkType: NetworkType,
-        paths: string[],
-        trezorDisplay: boolean,
-    ): Promise<string[]> {
+    public async getTrezorPublicKeyByPaths(networkType: NetworkType, paths: string[], trezorDisplay: boolean): Promise<string[]> {
         for (const path of paths) {
             if (!DerivationPathValidator.validate(path, networkType)) {
                 const errorMessage = 'Invalid derivation path: ' + path;
@@ -553,17 +548,13 @@ export class AccountService {
      * @param {boolean} trezorDisplay
      * @return {Promise<string>}
      */
-    public async getTrezorPublicKeyByPath(
-        networkType: NetworkType,
-        path: string,
-        trezorDisplay: boolean,
-    ): Promise<string> {
+    public async getTrezorPublicKeyByPath(networkType: NetworkType, path: string, trezorDisplay: boolean): Promise<string> {
         if (!DerivationPathValidator.validate(path, networkType)) {
             const errorMessage = 'Invalid derivation path: ' + path;
             console.error(errorMessage);
             throw new Error(errorMessage);
         }
-        
+
         const trezorService = new TrezorService(networkType);
         const result = await trezorService.getAccount(path, trezorDisplay);
         return result;

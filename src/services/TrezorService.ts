@@ -3,13 +3,14 @@ import { NetworkType } from 'symbol-sdk/dist/src/model/network/NetworkType';
 const TrezorConnect = window['TrezorConnect'];
 
 export class TrezorService {
-
     /**
      * constructor
      * @param networkType network type
      */
     constructor(public readonly networkType: NetworkType) {
-        if (!TrezorConnect) throw "Failed to load Trezor connection script";
+        if (!TrezorConnect) {
+            throw 'Failed to load Trezor connection script';
+        }
         // Change connectSrc when in Trezor production
         TrezorConnect.init({
             connectSrc: 'http://localhost:8088/',
@@ -17,13 +18,13 @@ export class TrezorService {
             manifest: {
                 email: 'developer@xyz.com',
                 appUrl: 'http://your.application.com',
-            }
+            },
         });
     }
 
     public async getAccounts(paths: string[], display: boolean): Promise<string[]> {
-        // Example: 
-        // Symbol Get multi public key:
+        // Example:
+        // Symbol Get multiple public key:
         // TrezorConnect.symbolGetPublicKey({
         //     bundle: [
         //         { path: "m/44'/4343'/0'/0'/0'", showOnTrezor: false }, // account 1
@@ -56,17 +57,19 @@ export class TrezorService {
             }
         }
         const param = {
-            bundle: paths.map(path => ({ path, showOnTrezor: !!display }))
-        }
+            bundle: paths.map((path) => ({ path, showOnTrezor: !!display })),
+        };
         const { success, payload } = await TrezorConnect.symbolGetPublicKey(param);
-        if (!success) throw payload.error;
-        const result = payload.map(elm => elm.publicKey)
+        if (!success) {
+            throw payload.error;
+        }
+        const result = payload.map((elm) => elm.publicKey);
         return result;
     }
 
     public async getAccount(path: string, display: boolean): Promise<string> {
         // Example:
-        // Symbol Get multi public key:
+        // Symbol Get single public key:
         // TrezorConnect.symbolGetPublicKey(
         //     { path: "m/44'/4343'/0'/0'/0'", showOnTrezor: false }
         // );
@@ -90,10 +93,12 @@ export class TrezorService {
             const errorMessage = 'Invalid derivation path: ' + path;
             throw new Error(errorMessage);
         }
-        const param = { path, showOnTrezor: !!display }
+        const param = { path, showOnTrezor: !!display };
         const { success, payload } = await TrezorConnect.symbolGetPublicKey(param);
-        if (!success) throw payload.error;
-        const result = payload.publicKey
+        if (!success) {
+            throw payload.error;
+        }
+        const result = payload.publicKey;
         return result;
     }
 }

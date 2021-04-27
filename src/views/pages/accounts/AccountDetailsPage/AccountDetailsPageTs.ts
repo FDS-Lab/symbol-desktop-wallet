@@ -231,12 +231,7 @@ export class AccountDetailsPageTs extends Vue {
         try {
             const networkType = this.currentProfile.networkType;
             const currentPath = this.currentAccount.path;
-            const currentAccount = await this.accountService.getTrezorAccountByPath(
-                this.currentProfile,
-                networkType,
-                currentPath,
-                true
-            );
+            const currentAccount = await this.accountService.getTrezorAccountByPath(this.currentProfile, networkType, currentPath, true);
             const accountPublicKey = currentAccount.publicKey.toUpperCase();
             if (accountPublicKey === this.currentAccount.publicKey.toUpperCase()) {
                 this.$store.dispatch('notification/ADD_SUCCESS', 'trezor_correct_account');

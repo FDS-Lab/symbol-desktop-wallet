@@ -179,8 +179,8 @@ export default class AccountSelectionTs extends Vue {
         try {
             // - generate addresses
             const accounts = await this.accountService.getTrezorAccounts(this.currentProfile.networkType, 10);
-            const publicKeyList = accounts.map(account => account.publicKey);
-            const addressesList = accounts.map(account => account.address);
+            const publicKeyList = accounts.map((account) => account.publicKey);
+            const addressesList = accounts.map((account) => account.address);
 
             this.$store.commit('account/publicKeyList', publicKeyList);
             this.$store.commit('account/addressesList', addressesList);

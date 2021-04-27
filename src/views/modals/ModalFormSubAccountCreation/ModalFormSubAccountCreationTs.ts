@@ -451,11 +451,7 @@ export class ModalFormSubAccountCreationTs extends Vue {
         try {
             const accountService = new AccountService();
             const nextPath = this.paths.getNextAccountPath(this.knownPaths);
-            const publicKey = await accountService.getTrezorPublicKeyByPath(
-                this.currentProfile.networkType,
-                nextPath,
-                false,
-            );
+            const publicKey = await accountService.getTrezorPublicKeyByPath(this.currentProfile.networkType, nextPath, false);
             const address = PublicAccount.createFromPublicKey(publicKey, this.currentProfile.networkType).address;
             return {
                 id: SimpleObjectStorage.generateIdentifier(),

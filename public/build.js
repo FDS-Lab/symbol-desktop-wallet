@@ -287,7 +287,6 @@ function initialize() {
     mainWindow = new BrowserWindow(windowOptions)
     mainWindow.setMenu(null)
     mainWindow.loadURL(loadUrlPath)
-    // mainWindow.toggleDevTools()
 
     mainWindow.once('ready-to-show', () => {
       mainWindow.show()
@@ -333,7 +332,6 @@ function initialize() {
           shell.openExternal(url)
         }
       }
-
     })
   })
 }
